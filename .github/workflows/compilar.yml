@@ -11,32 +11,20 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Instalar Dependencias Auxiliares
+      - name: Instalar Dependências Completas
         run: |
-          # Instalamos só o que não usa ZLIB para não corromper nada
-          vcpkg install glew openssl physfs luajit --triplet x86-windows-static
+          # Instalamos o pacote completo para evitar o erro de BZip2 e ZLIB
+          vcpkg install glew openssl physfs luajit zlib bzip2 libzip --triplet x86-windows-static
 
-      - name: Baixar ZLIB Manualmente
-        shell: bash
-        run: |
-          # Baixamos a biblioteca direto do repositório oficial em binário
-          curl -L https://github.com/madler/zlib/archive/refs/tags/v1.3.1.zip -o zlib.zip
-          unzip zlib.zip
-          mv zlib-1.3.1 external_zlib
-
-      - name: Compilar com CMake (Modo Forçado)
+      - name: Compilar com CMake
         shell: bash
         run: |
           mkdir build && cd build
-          # Aqui a gente aponta o CMake para a pasta que acabamos de baixar
-          # Isso pula qualquer erro do vcpkg
+          # O segredo é usar o CMAKE_TOOLCHAIN_FILE para o vcpkg gerenciar todas as bibliotecas sozinho
           cmake .. -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake \
                    -DVCPKG_TARGET_TRIPLET=x86-windows-static \
                    -DOTC_COMPILE_STATIC=ON \
-                   -DUSE_SYSTEM_ZLIB=OFF \
-                   -DZLIB_SOURCE_DIR="../external_zlib" \
-                   -DZLIB_INCLUDE_DIR="../external_zlib" \
-                   -DZLIB_LIBRARY="../external_zlib"
+                   -DCOMPILER_OPTIMIZATION=OFF
           
           cmake --build . --config Release --parallel 4
 
