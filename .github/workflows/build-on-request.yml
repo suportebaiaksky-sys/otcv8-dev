@@ -2,30 +2,40 @@ name: Build OTCv8 Windows
 on: [workflow_dispatch]
 
 jobs:
-  build:
+  build-windows:
+    name: Build Windows Version
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
-      - name: Install MXE (Compilador Windows)
+      - name: Install Compilers & Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y gnupg2
           sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 86B6165C
           sudo add-apt-repository "deb [arch=amd64] http://pkg.mxe.cc/repos/apt/focal main"
           sudo apt-get update
-          sudo apt-get install -y mxe-i686-w64-mingw32.static-boost mxe-i686-w64-mingw32.static-glew mxe-i686-w64-mingw32.static-libzip mxe-i686-w64-mingw32.static-physfs mxe-i686-w64-mingw32.static-openssl mxe-i686-w64-mingw32.static-luajit
+          sudo apt-get install -y mxe-i686-w64-mingw32.static-boost \
+                                 mxe-i686-w64-mingw32.static-glew \
+                                 mxe-i686-w64-mingw32.static-libzip \
+                                 mxe-i686-w64-mingw32.static-physfs \
+                                 mxe-i686-w64-mingw32.static-openssl \
+                                 mxe-i686-w64-mingw32.static-luajit \
+                                 cmake make
 
-      - name: Compile Executable
+      - name: Configure and Compile
         run: |
           mkdir build && cd build
-          cmake .. -DCMAKE_TOOLCHAIN_FILE=/usr/lib/mxe/usr/i686-w64-mingw32.static/share/cmake/mxe-conf.cmake -DOTC_COMPILE_STATIC=ON -G "Unix Makefiles"
+          cmake .. -DCMAKE_TOOLCHAIN_FILE=/usr/lib/mxe/usr/i686-w64-mingw32.static/share/cmake/mxe-conf.cmake \
+                   -DOTC_COMPILE_STATIC=ON \
+                   -G "Unix Makefiles"
           make -j$(nproc)
 
-      - name: Upload .EXE
+      - name: Upload OTClient EXE
         uses: actions/upload-artifact@v3
         with:
-          name: otclient-windows
+          name: otclient-windows-v8
           path: build/otclient.exe
