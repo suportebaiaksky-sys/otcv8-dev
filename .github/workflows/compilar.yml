@@ -4,21 +4,31 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04 # Atualizado para a versão estável mais recente
     steps:
       - name: Checkout
-        uses: actions/checkout@v4 # Atualizado para v4
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
       - name: Instalar Dependencias
         run: |
           sudo apt-get update
-          sudo apt-get install -y gnupg2 cmake
-          sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 86B6165C
+          sudo apt-get install -y gnupg2 software-properties-common wget cmake
+          
+          # SOLUÇÃO PARA O ERRO: Baixando a chave diretamente via wget para evitar o erro de 'No data'
+          wget -qO - https://pkg.mxe.cc/repos/apt/conf/mxe.gpg.key | sudo apt-key add -
+          
           sudo add-apt-repository "deb [arch=amd64] http://pkg.mxe.cc/repos/apt/focal main"
           sudo apt-get update
-          sudo apt-get install -y mxe-i686-w64-mingw32.static-boost mxe-i686-w64-mingw32.static-glew mxe-i686-w64-mingw32.static-libzip mxe-i686-w64-mingw32.static-physfs mxe-i686-w64-mingw32.static-openssl mxe-i686-w64-mingw32.static-luajit
+          
+          # Instalando os pacotes
+          sudo apt-get install -y mxe-i686-w64-mingw32.static-boost \
+                                 mxe-i686-w64-mingw32.static-glew \
+                                 mxe-i686-w64-mingw32.static-libzip \
+                                 mxe-i686-w64-mingw32.static-physfs \
+                                 mxe-i686-w64-mingw32.static-openssl \
+                                 mxe-i686-w64-mingw32.static-luajit
 
       - name: Compilar
         run: |
@@ -27,7 +37,7 @@ jobs:
           make -j$(nproc)
 
       - name: Upload
-        uses: actions/upload-artifact@v4 # AQUI ESTAVA O ERRO: Atualizado de v3 para v4
+        uses: actions/upload-artifact@v4
         with:
           name: otclient-windows
           path: build/otclient.exe
