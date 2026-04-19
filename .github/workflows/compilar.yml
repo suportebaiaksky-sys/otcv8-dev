@@ -11,20 +11,21 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Instalar Dependências Completas
+      - name: Faxina e Instalação (vcpkg)
         run: |
-          # Instalamos o pacote completo para evitar o erro de BZip2 e ZLIB
-          vcpkg install glew openssl physfs luajit zlib bzip2 libzip --triplet x86-windows-static
+          # Removemos qualquer rastro de instalações anteriores que possam estar corrompidas
+          vcpkg install zlib libzip glew openssl physfs luajit bzip2 --triplet x86-windows-static --clean-after-build
 
       - name: Compilar com CMake
         shell: bash
         run: |
           mkdir build && cd build
-          # O segredo é usar o CMAKE_TOOLCHAIN_FILE para o vcpkg gerenciar todas as bibliotecas sozinho
+          # Forçamos o CMake a ignorar o wrapper problemático e usar os arquivos direto
           cmake .. -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake \
                    -DVCPKG_TARGET_TRIPLET=x86-windows-static \
                    -DOTC_COMPILE_STATIC=ON \
-                   -DCOMPILER_OPTIMIZATION=OFF
+                   -DZLIB_USE_STATIC_LIBS=ON \
+                   -DUSE_SYSTEM_ZLIB=ON
           
           cmake --build . --config Release --parallel 4
 
