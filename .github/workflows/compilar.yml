@@ -4,7 +4,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest # Mudamos para Windows para facilitar o encontro das libs
+    runs-on: windows-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -13,18 +13,20 @@ jobs:
 
       - name: Instalar Bibliotecas (vcpkg)
         run: |
-          vcpkg install blew zlib libzip openssl physfs luajit --triplet x86-windows-static
+          # Corrigido: glew (com G) em vez de blew
+          vcpkg install glew zlib libzip openssl physfs luajit --triplet x86-windows-static
 
       - name: Configurar e Compilar
         shell: bash
         run: |
           mkdir build && cd build
+          # Vincula o vcpkg ao CMake do seu projeto
           cmake .. -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake \
                    -DVCPKG_TARGET_TRIPLET=x86-windows-static \
                    -DOTC_COMPILE_STATIC=ON
           cmake --build . --config Release
 
-      - name: Upload
+      - name: Upload do Executável
         uses: actions/upload-artifact@v4
         with:
           name: otclient-windows
