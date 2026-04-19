@@ -1,1 +1,32 @@
 
+name: Compilar Cliente
+on: [workflow_dispatch, push] # Roda manual ou quando você salva algo
+
+jobs:
+  build:
+    runs-on: ubuntu-latest # O servidor que libera NA HORA
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Preparar Sistema
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gnupg2 cmake
+          sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 86B6165C
+          sudo add-apt-repository "deb [arch=amd64] http://pkg.mxe.cc/repos/apt/focal main"
+          sudo apt-get update
+          sudo apt-get install -y mxe-i686-w64-mingw32.static-boost mxe-i686-w64-mingw32.static-glew mxe-i686-w64-mingw32.static-libzip mxe-i686-w64-mingw32.static-physfs mxe-i686-w64-mingw32.static-openssl mxe-i686-w64-mingw32.static-luajit
+
+      - name: Compilar Windows
+        run: |
+          mkdir build && cd build
+          cmake .. -DCMAKE_TOOLCHAIN_FILE=/usr/lib/mxe/usr/i686-w64-mingw32.static/share/cmake/mxe-conf.cmake -DOTC_COMPILE_STATIC=ON -G "Unix Makefiles"
+          make -j$(nproc)
+
+      - name: Download do EXE
+        uses: actions/upload-artifact@v3
+        with:
+          name: otclient-windows
+          path: build/otclient.exe
