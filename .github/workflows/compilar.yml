@@ -4,7 +4,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04 # Atualizado para a versão estável mais recente
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -14,15 +14,18 @@ jobs:
       - name: Instalar Dependencias
         run: |
           sudo apt-get update
-          sudo apt-get install -y gnupg2 software-properties-common wget cmake
+          sudo apt-get install -y ca-certificates curl gnupg software-properties-common cmake
           
-          # SOLUÇÃO PARA O ERRO: Baixando a chave diretamente via wget para evitar o erro de 'No data'
-          wget -qO - https://pkg.mxe.cc/repos/apt/conf/mxe.gpg.key | sudo apt-key add -
+          # Baixa e prepara a chave do repositório MXE no novo formato
+          sudo mkdir -p /etc/apt/keyrings
+          curl -fsSL https://pkg.mxe.cc/repos/apt/conf/mxe.gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/mxe.gpg
           
-          sudo add-apt-repository "deb [arch=amd64] http://pkg.mxe.cc/repos/apt/focal main"
+          # Adiciona o repositório apontando para a chave específica
+          echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/mxe.gpg] http://pkg.mxe.cc/repos/apt/focal main" | sudo tee /etc/apt/sources.list.d/mxe.list
+          
           sudo apt-get update
           
-          # Instalando os pacotes
+          # Instala os pacotes do compilador
           sudo apt-get install -y mxe-i686-w64-mingw32.static-boost \
                                  mxe-i686-w64-mingw32.static-glew \
                                  mxe-i686-w64-mingw32.static-libzip \
