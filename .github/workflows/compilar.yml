@@ -4,33 +4,28 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest # Mudamos para Windows para facilitar o encontro das libs
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Instalar Compilador Windows
+      - name: Instalar Bibliotecas (vcpkg)
         run: |
-          sudo apt-get update
-          # Instalando o MinGW oficial do repositório do Ubuntu (sempre online)
-          sudo apt-get install -y mingw-w64 cmake
-          sudo apt-get install -y libglew-dev libzip-dev libphysfs-dev libssl-dev
+          vcpkg install blew zlib libzip openssl physfs luajit --triplet x86-windows-static
 
-      - name: Compilar
+      - name: Configurar e Compilar
+        shell: bash
         run: |
           mkdir build && cd build
-          # Configura o CMake para usar o compilador de Windows que instalamos acima
-          cmake .. -DCMAKE_SYSTEM_NAME=Windows \
-                   -DCMAKE_C_COMPILER=i686-w64-mingw32-gcc \
-                   -DCMAKE_CXX_COMPILER=i686-w64-mingw32-g++ \
-                   -DOTC_COMPILE_STATIC=ON \
-                   -G "Unix Makefiles"
-          make -j$(nproc)
+          cmake .. -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake \
+                   -DVCPKG_TARGET_TRIPLET=x86-windows-static \
+                   -DOTC_COMPILE_STATIC=ON
+          cmake --build . --config Release
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: otclient-windows
-          path: build/otclient.exe
+          path: build/Release/otclient.exe
