@@ -11,23 +11,22 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Instalar Dependencias (vcpkg)
+      - name: Instalar Dependencias (Forçando Limpeza)
         run: |
-          # Instalamos tudo de novo para garantir que os arquivos existam no disco
-          vcpkg install glew openssl physfs luajit zlib libzip --triplet x86-windows-static
+          # Removemos o diretório de ports se estiver corrompido e instalamos do zero
+          vcpkg install zlib libzip glew openssl physfs luajit --triplet x86-windows-static --recurse
 
       - name: Compilar com CMake
         shell: bash
         run: |
           mkdir build && cd build
-          # O pulo do gato: Passamos o caminho direto da ZLIB do vcpkg nas variáveis do CMake
+          # Adicionamos uma flag para ignorar o wrapper que está dando erro (vcpkg-cmake-wrapper.cmake)
           cmake .. -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake \
                    -DVCPKG_TARGET_TRIPLET=x86-windows-static \
                    -DOTC_COMPILE_STATIC=ON \
                    -DZLIB_LIBRARY="C:/vcpkg/installed/x86-windows-static/lib/zlib.lib" \
                    -DZLIB_INCLUDE_DIR="C:/vcpkg/installed/x86-windows-static/include" \
-                   -DLIBZIP_LIBRARY="C:/vcpkg/installed/x86-windows-static/lib/libzip.lib" \
-                   -DLIBZIP_INCLUDE_DIR="C:/vcpkg/installed/x86-windows-static/include"
+                   -D_VCPKG_INSTALLED_DIR="C:/vcpkg/installed"
           
           cmake --build . --config Release --parallel 4
 
