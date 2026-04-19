@@ -4,49 +4,29 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Instalar Dependencias
+      - name: Instalar Compilador Windows
         run: |
           sudo apt-get update
-          sudo apt-get install -y ca-certificates curl gnupg software-properties-common cmake
-          
-          # Tentativa com o repositório oficial do MXE usando um link espelho
-          sudo mkdir -p /etc/apt/keyrings
-          curl -fsSL https://gist.githubusercontent.com/mehah/68903e1e24c29792582f3d64703b44b8/raw/mxe.gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/mxe.gpg
-          
-          echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/mxe.gpg] http://pkg.mxe.cc/repos/apt/focal main" | sudo tee /etc/apt/sources.list.d/mxe.list
-          
-          sudo apt-get update || true # Ignora erros se o repo principal falhar
-          
-          # Instalando via pacotes padrão do Ubuntu que servem para cross-compile
-          sudo apt-get install -y g++-mingw-w64-i686 binutils-mingw-w64-i686
-          
-          # Tenta instalar as libs específicas do MXE
-          sudo apt-get install -y mxe-i686-w64-mingw32.static-boost \
-                                 mxe-i686-w64-mingw32.static-glew \
-                                 mxe-i686-w64-mingw32.static-libzip \
-                                 mxe-i686-w64-mingw32.static-physfs \
-                                 mxe-i686-w64-mingw32.static-openssl \
-                                 mxe-i686-w64-mingw32.static-luajit || echo "Usando libs locais se disponiveis"
+          # Instalando o MinGW oficial do repositório do Ubuntu (sempre online)
+          sudo apt-get install -y mingw-w64 cmake
+          sudo apt-get install -y libglew-dev libzip-dev libphysfs-dev libssl-dev
 
       - name: Compilar
         run: |
           mkdir build && cd build
-          # Se o MXE falhar, tentamos o cmake padrão do sistema para MinGW
+          # Configura o CMake para usar o compilador de Windows que instalamos acima
           cmake .. -DCMAKE_SYSTEM_NAME=Windows \
                    -DCMAKE_C_COMPILER=i686-w64-mingw32-gcc \
                    -DCMAKE_CXX_COMPILER=i686-w64-mingw32-g++ \
                    -DOTC_COMPILE_STATIC=ON \
-                   -G "Unix Makefiles" || \
-          cmake .. -DCMAKE_TOOLCHAIN_FILE=/usr/lib/mxe/usr/i686-w64-mingw32.static/share/cmake/mxe-conf.cmake \
-                   -DOTC_COMPILE_STATIC=ON -G "Unix Makefiles"
-          
+                   -G "Unix Makefiles"
           make -j$(nproc)
 
       - name: Upload
