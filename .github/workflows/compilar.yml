@@ -13,30 +13,33 @@ jobs:
 
       - name: Instalar Dependencias (vcpkg)
         run: |
-          # Instalamos o Boost e componentes necessários via vcpkg
+          # Instalamos os pacotes necessários
           vcpkg install boost-system boost-filesystem zlib libzip bzip2 glew openssl physfs luajit --triplet x86-windows-static --clean-after-build
 
-      - name: Aplicar Opção 1 (Update Boost Version)
+      - name: Remover Scripts de Busca Conflitantes
         shell: bash
         run: |
-          # Altera a versão mínima de 1.67.0 para 1.90.0 conforme sua análise
-          sed -i 's/find_package(Boost 1.67.0/find_package(Boost 1.90.0/g' src/framework/CMakeLists.txt
+          # Removemos os scripts internos que causam o erro de 'exit code 1'
+          rm -f src/framework/cmake/FindBoost.cmake
+          rm -f src/framework/cmake/FindZLIB.cmake
+          rm -f src/framework/cmake/FindLibZip.cmake
 
       - name: Compilar com CMake
         shell: bash
         run: |
           mkdir build && cd build
-          # Forçamos o CMake a usar o modo de configuração do vcpkg para o Boost
+          # O segredo agora é deixar o vcpkg tomar conta de tudo sem interferência
           cmake .. -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake \
                    -DVCPKG_TARGET_TRIPLET=x86-windows-static \
                    -DOTC_COMPILE_STATIC=ON \
-                   -DBoost_NO_BOOST_CMAKE=OFF \
-                   -DCMAKE_PREFIX_PATH="C:/vcpkg/installed/x86-windows-static"
+                   -DCMAKE_BUILD_TYPE=Release
           
           cmake --build . --config Release --parallel 4
 
-      - name: Upload do Executável
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: otclient-windows
-          path: build/Release/otclient.exe
+          path: |
+            build/Release/otclient.exe
+            build/otclient.exe
