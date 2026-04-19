@@ -13,19 +13,22 @@ jobs:
 
       - name: Faxina e Instalação (vcpkg)
         run: |
-          # O segredo: --recurse e --clean-after-build para deletar arquivos corrompidos
-          vcpkg install zlib libzip glew openssl physfs luajit bzip2 --triplet x86-windows-static --recurse --clean-after-build
+          # Remove as instalações que o log marcou como 'broken'
+          vcpkg remove zlib:x86-windows-static --recurse
+          vcpkg remove libzip:x86-windows-static --recurse
+          
+          # Instala novamente de forma limpa
+          vcpkg install zlib libzip glew openssl physfs luajit bzip2 --triplet x86-windows-static --clean-after-build
 
       - name: Compilar com CMake
         shell: bash
         run: |
           mkdir build && cd build
-          # Forçamos o CMake a usar os arquivos reais, pulando o "wrapper" quebrado
+          # Força o uso das bibliotecas estáticas e ignora erros de configuração do cache
           cmake .. -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake \
                    -DVCPKG_TARGET_TRIPLET=x86-windows-static \
                    -DOTC_COMPILE_STATIC=ON \
-                   -DZLIB_USE_STATIC_LIBS=ON \
-                   -DUSE_SYSTEM_ZLIB=ON
+                   -DZLIB_USE_STATIC_LIBS=ON
           
           cmake --build . --config Release --parallel 4
 
