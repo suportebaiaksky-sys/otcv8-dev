@@ -1,16 +1,17 @@
-
 name: Compilar Cliente
-on: [workflow_dispatch, push] # Roda manual ou quando você salva algo
+on: 
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest # O servidor que libera NA HORA
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4 # Atualizado para v4
         with:
           submodules: recursive
 
-      - name: Preparar Sistema
+      - name: Instalar Dependencias
         run: |
           sudo apt-get update
           sudo apt-get install -y gnupg2 cmake
@@ -19,14 +20,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y mxe-i686-w64-mingw32.static-boost mxe-i686-w64-mingw32.static-glew mxe-i686-w64-mingw32.static-libzip mxe-i686-w64-mingw32.static-physfs mxe-i686-w64-mingw32.static-openssl mxe-i686-w64-mingw32.static-luajit
 
-      - name: Compilar Windows
+      - name: Compilar
         run: |
           mkdir build && cd build
           cmake .. -DCMAKE_TOOLCHAIN_FILE=/usr/lib/mxe/usr/i686-w64-mingw32.static/share/cmake/mxe-conf.cmake -DOTC_COMPILE_STATIC=ON -G "Unix Makefiles"
           make -j$(nproc)
 
-      - name: Download do EXE
-        uses: actions/upload-artifact@v3
+      - name: Upload
+        uses: actions/upload-artifact@v4 # AQUI ESTAVA O ERRO: Atualizado de v3 para v4
         with:
           name: otclient-windows
           path: build/otclient.exe
