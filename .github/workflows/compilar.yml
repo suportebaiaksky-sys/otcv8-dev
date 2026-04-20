@@ -13,32 +13,33 @@ jobs:
 
       - name: Instalação de Dependências (vcpkg)
         run: |
-          # Mantendo a base que resolveu os erros iniciais
+          # Mantendo o que resolveu ZLIB e LibZip
           vcpkg install boost-system boost-filesystem zlib libzip bzip2 glew openssl physfs luajit --triplet x86-windows-static --clean-after-build
 
       - name: Limpeza e Ajuste de Versão
         shell: bash
         run: |
-          # Mantendo a remoção dos scripts conflitantes (ZLIB, LibZip e Boost local)
+          # Mantendo a remoção dos scripts que causavam o erro de 'exit code 1'
           rm -f src/framework/cmake/FindBoost.cmake
           rm -f src/framework/cmake/FindZLIB.cmake
           rm -f src/framework/cmake/FindLibZip.cmake
           
-          # Removendo a trava de versão 1.67.0 para aceitar a do vcpkg (Corrige image_b34d09)
+          # Mantendo o ajuste que remove o erro de mismatch de versão (image_b34d09)
           sed -i 's/find_package(Boost 1.67.0/find_package(Boost/g' src/framework/CMakeLists.txt
 
       - name: Compilar com CMake
         shell: bash
         run: |
           mkdir build && cd build
-          # Adicionamos -DBoost_NO_SYSTEM_PATHS=ON para ignorar o erro da imagem dca003
-          # E -DBoost_NO_BOOST_CMAKE=ON para silenciar os avisos de política
+          # Adicionamos -DBoost_NO_SYSTEM_PATHS=ON para impedir que ele vá buscar em C:/Program Files (image_dd17e2)
           cmake .. -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake \
                    -DVCPKG_TARGET_TRIPLET=x86-windows-static \
                    -DOTC_COMPILE_STATIC=ON \
                    -DCMAKE_BUILD_TYPE=Release \
                    -DBoost_NO_BOOST_CMAKE=ON \
-                   -DBoost_NO_SYSTEM_PATHS=ON
+                   -DBoost_NO_SYSTEM_PATHS=ON \
+                   -DBOOST_ROOT="C:/vcpkg/installed/x86-windows-static" \
+                   -DBOOST_LIBRARYDIR="C:/vcpkg/installed/x86-windows-static/lib"
           
           cmake --build . --config Release --parallel 4
 
