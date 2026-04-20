@@ -13,29 +13,33 @@ jobs:
 
       - name: Instalação de Dependências (vcpkg)
         run: |
+          # Mantendo a instalação que resolveu os erros de bibliotecas anteriores
           vcpkg install boost-system boost-filesystem zlib libzip bzip2 glew openssl physfs luajit --triplet x86-windows-static --clean-after-build
 
-      - name: Limpeza de Scripts e Trava de Versão
+      - name: Limpeza e Ajuste de Versão
         shell: bash
         run: |
-          # Mantendo as correções de ZLIB e LibZip que deram certo
+          # Removemos os scripts que causaram o "exit code 1" nas suas imagens
           rm -f src/framework/cmake/FindBoost.cmake
           rm -f src/framework/cmake/FindZLIB.cmake
           rm -f src/framework/cmake/FindLibZip.cmake
           
-          # Forçando o CMakeLists a aceitar qualquer versão do Boost (evita o erro da imagem b34d09)
+          # Removemos a trava de versão 1.67.0 que causa o mismatch com a 1.90.0 do vcpkg
           sed -i 's/find_package(Boost 1.67.0/find_package(Boost/g' src/framework/CMakeLists.txt
 
       - name: Compilar com CMake
         shell: bash
         run: |
           mkdir build && cd build
-          # Adicionamos -DBoost_NO_BOOST_CMAKE=ON para ignorar o script que falhou na imagem dba8a4
+          # Adicionamos -DBoost_NO_BOOST_CMAKE=ON para ignorar o script falho das imagens dba8a4 e dc2002
+          # E apontamos o caminho manual para o CMake não ter que "adivinhar"
           cmake .. -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake \
                    -DVCPKG_TARGET_TRIPLET=x86-windows-static \
                    -DOTC_COMPILE_STATIC=ON \
+                   -DCMAKE_BUILD_TYPE=Release \
                    -DBoost_NO_BOOST_CMAKE=ON \
-                   -DCMAKE_BUILD_TYPE=Release
+                   -DBOOST_ROOT="C:/vcpkg/installed/x86-windows-static" \
+                   -DBOOST_LIBRARYDIR="C:/vcpkg/installed/x86-windows-static/lib"
           
           cmake --build . --config Release --parallel 4
 
