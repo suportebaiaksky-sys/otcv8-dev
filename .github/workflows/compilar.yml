@@ -13,25 +13,26 @@ jobs:
 
       - name: Instalação de Dependências (vcpkg)
         run: |
-          # Mantendo a base vitoriosa contra ZLIB e LibZip
+          # Mantendo as bibliotecas que já pararam de dar erro
           vcpkg install boost-system boost-filesystem zlib libzip bzip2 glew openssl physfs luajit --triplet x86-windows-static --clean-after-build
 
-      - name: Limpeza e Ajuste Radical (sed)
+      - name: Limpeza e Correção de Versão (Boost 1.90.0)
         shell: bash
         run: |
-          # Mantendo a remoção dos scripts conflitantes de 2018
+          # Removendo scripts obsoletos que causavam conflitos nos logs anteriores
           rm -f src/framework/cmake/FindBoost.cmake
           rm -f src/framework/cmake/FindZLIB.cmake
           rm -f src/framework/cmake/FindLibZip.cmake
           
-          # Seu sed aprimorado: remove QUALQUER versão para evitar o mismatch da 1.90.0
-          sed -i 's/find_package(Boost [^ ]* COMPONENTS/find_package(Boost COMPONENTS/g' src/framework/CMakeLists.txt
+          # Alinhando o CMakeLists com a versão 1.90.0 instalada pelo vcpkg
+          # Isso resolve o erro de 'exactly matches requested version' visto nos logs
+          sed -i 's/find_package(Boost 1.67.0/find_package(Boost 1.90.0/g' src/framework/CMakeLists.txt
 
       - name: Compilar com CMake
         shell: bash
         run: |
           mkdir build && cd build
-          # Adicionamos -DBoost_DEBUG=ON para vermos exatamente onde ele trava se falhar
+          # Travando o CMake para usar apenas os caminhos do vcpkg
           cmake .. -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake \
                    -DVCPKG_TARGET_TRIPLET=x86-windows-static \
                    -DOTC_COMPILE_STATIC=ON \
@@ -39,8 +40,7 @@ jobs:
                    -DBoost_NO_BOOST_CMAKE=ON \
                    -DBoost_NO_SYSTEM_PATHS=ON \
                    -DBOOST_ROOT="C:/vcpkg/installed/x86-windows-static" \
-                   -DBOOST_LIBRARYDIR="C:/vcpkg/installed/x86-windows-static/lib" \
-                   -DBoost_DEBUG=ON
+                   -DBOOST_LIBRARYDIR="C:/vcpkg/installed/x86-windows-static/lib"
           
           cmake --build . --config Release --parallel 4
 
